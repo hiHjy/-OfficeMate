@@ -6,15 +6,19 @@
 #include <QTimer>
 #include <QByteArray>
 #include "face_api.h"
+
 QString global_token;
+FaceAttendence* FaceAttendence::self = nullptr;
+
 FaceAttendence::FaceAttendence(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::FaceAttendence)
 {
     ui->setupUi(this);
+    self = this;
+    ui->widget_2->hide();
     cap.open("/dev/video0");
     //startTimer(100);
-
 
     timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &FaceAttendence::updateFrame);
@@ -26,7 +30,7 @@ FaceAttendence::FaceAttendence(QWidget *parent)
         return;
     }
 
-    cascade.load("/home/hjy/Documents/linux-embed/qt/FaceAttendence/haarcascade_frontalface_default.xml");
+    cascade.load("/home/hjy/Documents/office_meta/FaceAttendence/haarcascade_frontalface_default.xml");
 
     face_dect = new Work(this, &frame, &cascade);
 
@@ -53,7 +57,11 @@ FaceAttendence::FaceAttendence(QWidget *parent)
             faceSearch(base64, global_token);
     });
 
-
+    connect(this, &FaceAttendence::sigFaceVerified, this, [=](QString name){
+        //ui->widget_2->setText("认证成功：" + name);
+        ui->widget2->show();
+        qDebug() << "uid:" << name << endl;
+    });
 
 
 }
@@ -65,6 +73,11 @@ void FaceAttendence::updateFrame()
     ui->videoLb->setPixmap(QPixmap::fromImage(image));
 
 
+}
+
+FaceAttendence *FaceAttendence::getInstance()
+{
+    return self;
 }
 
 Work::Work(QWidget *parent, cv::Mat *frame, cv::CascadeClassifier *cascade) :
@@ -135,6 +148,8 @@ void Work::run()
 //            //✅ 下一步：把这个 JPG 文件传给你的人脸识别程序
 //            system(QString("./face %1").arg(filename).toStdString().c_str());
 //        }
+
+
 
     }
 }

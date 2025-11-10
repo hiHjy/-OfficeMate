@@ -18,9 +18,12 @@ public:
     void run() override;
     cv::Mat *frame;
     cv::CascadeClassifier *cascade;
+
 signals:
     void sigFaceReady(QString base64);
+
 };
+
 
 class FaceAttendence : public QMainWindow
 {
@@ -32,6 +35,9 @@ public:
     //定时器事件
     //void timerEvent(QTimerEvent *e);
     void updateFrame();
+    static FaceAttendence *getInstance();
+signals:
+    void sigFaceVerified(QString userName);
 private:
     Ui::FaceAttendence *ui;
     VideoCapture cap;
@@ -39,6 +45,7 @@ private:
     Work *face_dect;
     cv::CascadeClassifier cascade;//一级级联分类器
     cv::Mat frame;
+    static FaceAttendence* self;
 
 };
 
