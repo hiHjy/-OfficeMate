@@ -22,13 +22,13 @@
   <widget class="QWidget" name="">
    <property name="geometry">
     <rect>
-     <x>10</x>
-     <y>10</y>
-     <width>781</width>
-     <height>461</height>
+     <x>0</x>
+     <y>0</y>
+     <width>801</width>
+     <height>481</height>
     </rect>
    </property>
-   <layout class="QHBoxLayout" name="horizontalLayout_9">
+   <layout class="QHBoxLayout" name="horizontalLayout_3">
     <item>
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
@@ -131,6 +131,40 @@
        </layout>
       </item>
       <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_2">
+        <item>
+         <widget class="QLabel" name="Lb_Dept">
+          <property name="font">
+           <font>
+            <pointsize>15</pointsize>
+           </font>
+          </property>
+          <property name="text">
+           <string>学院</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="Le_Dept">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="font">
+           <font>
+            <pointsize>15</pointsize>
+           </font>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
        <layout class="QHBoxLayout" name="horizontalLayout_10">
         <item>
          <widget class="QPushButton" name="Btn_Register">
@@ -192,7 +226,7 @@
          </sizepolicy>
         </property>
         <property name="styleSheet">
-         <string notr="true">background-color: rgb(226, 178, 178);</string>
+         <string notr="true">background-color: rgb(211, 215, 207);</string>
         </property>
         <property name="text">
          <string/>
@@ -222,7 +256,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="Btn_OpenCap">
+         <widget class="QPushButton" name="Btn_Cap">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
             <horstretch>0</horstretch>
@@ -230,7 +264,7 @@
            </sizepolicy>
           </property>
           <property name="text">
-           <string>打开摄像头 </string>
+           <string>打开摄像头</string>
           </property>
          </widget>
         </item>

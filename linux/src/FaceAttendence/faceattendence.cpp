@@ -17,6 +17,8 @@ FaceAttendence::FaceAttendence(QWidget *parent)
     ui->setupUi(this);
     self = this;
     ui->widget_2->hide();
+    old_x = ui->head_cap_img->x();
+    old_y = ui->head_cap_img->y();
 
     DatabaseManager *db = DatabaseManager::getInstance();
     if (!db->initDataBase()) {
@@ -77,9 +79,31 @@ FaceAttendence::FaceAttendence(QWidget *parent)
             qDebug() << "姓名:" << user.name;
             qDebug() << "工号:" << user.workId;
             qDebug() << "身份:" << user.identity;
+            qDebug() << "学院"  << user.dept;
             ui->LE_Name->setText(user.name);
             ui->LE_Work_ID->setText(user.workId);
             ui->LE_identity->setText(user.identity);
+            ui->LE_Dept->setText(user.dept);
+
+            //识别成功后存入数据库，记录访客时间
+            if (!DatabaseManager::getInstance()->insertVisitRecord(user.workId)) {
+
+                QMessageBox::warning(this, "错误", "记录访客导数据库失败！");
+                return;
+            }
+
+
+
+        }
+
+    });
+
+    connect(face_dect, &Work::sigFaceTrace, this, [=](int x, int y, bool status) {
+
+        if (status)
+            ui->head_cap_img->move(x, y);
+        else {
+            ui->head_cap_img->move(old_x, old_y);
         }
 
     });
@@ -88,53 +112,87 @@ FaceAttendence::FaceAttendence(QWidget *parent)
 }
 void FaceAttendence::updateFrame()
 {
+    cv::Mat tmp;
     cap >> frame;
-    cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
-    QImage image(frame.data, frame.cols, frame.rows, QImage::Format_RGB888);
-    ui->videoLb->setPixmap(QPixmap::fromImage(image));
 
+    {
+        QMutexLocker locker(&frameMutex);
+        tmp = frame;
+    }
+
+    cv::cvtColor(tmp, tmp, cv::COLOR_BGR2RGB);
+    QImage image(tmp.data, tmp.cols, tmp.rows,  tmp.step1(),QImage::Format_RGB888);
+
+    ui->videoLb->setPixmap(QPixmap::fromImage(image));
+    //    ui->videoLb->setPixmap(QPixmap::fromImage(image).scaled(ui->videoLb->size(),
+    //                                        Qt::KeepAspectRatio,
+    //                                        Qt::SmoothTransformation));
 
 }
+
 
 FaceAttendence *FaceAttendence::getInstance()
 {
     return self;
 }
 
-Work::Work(QWidget *parent, cv::Mat *frame, cv::CascadeClassifier *cascade) :
-    QThread(parent),
-    frame(frame),
-    cascade(cascade)
+Work::Work(QWidget *parent, cv::Mat *frame, cv::CascadeClassifier *cascade, QMutex *frameMutex)
+    :
+      QThread(parent),
+      frame(frame),
+      cascade(cascade),
+      frameMutex(frameMutex)
 {
     // 可以在这里进行初始化
 }
 FaceAttendence::~FaceAttendence()
 {
+    if (face_dect) {
+        face_dect->requestInterruption();
+        face_dect->wait(); // 等待线程结束
+        delete face_dect;
+        face_dect = nullptr;
+    }
     delete ui;
+
 }
 
 void Work::run()
 {
     std::cout << "work start" << std::endl;
     cv::Mat gray;
-    while (1) {
+    cv::Mat work_frame;
+    while (!isInterruptionRequested()) {
+        {
+            QMutexLocker locker(frameMutex);
+            work_frame = *frame;
 
-        cv::cvtColor(*this->frame, gray, cv::COLOR_BGR2GRAY);
+        }
+        cv::cvtColor(work_frame, gray, cv::COLOR_BGR2GRAY);
 
         // --- 2) Haar 人脸检测 ---
         std::vector<cv::Rect> faces;
+
         this->cascade->detectMultiScale(gray, faces, 1.2, 3);
-        if (faces.empty())
+        Rect rect;
+        if (faces.empty() ) {
+            emit sigFaceTrace(0, 0, false);
             continue;
-
-
-        // --- 3) 给检测到的人脸画框 ---
-        for (auto &face : faces) {
-            qDebug() << "检测到人脸" << endl;
-            cv::rectangle(*this->frame, face, cv::Scalar(0, 255, 0), 2);
         }
 
-        // 保存为 JPG
+        rect = faces[0];
+        // --- 3) 给检测到的人脸画框 ---
+        if (faces.size() > 0) {
+            qDebug() << "检测到人脸" << endl;
+
+            //cv::rectangle(*this->frame, face, cv::Scalar(0, 255, 0), 2);
+            emit sigFaceTrace(rect.x, rect.y, true);
+        } else {
+
+        }
+
+
+
         static qint64 last = 0;
         qint64 now = QDateTime::currentMSecsSinceEpoch();
         if (now - last < 2000) {  // 2000 ms = 2秒
@@ -145,7 +203,7 @@ void Work::run()
         counter++;
 
         std::vector<uchar> buf;
-        cv::imencode(".jpg", *this->frame, buf);
+        cv::imencode(".jpg", work_frame, buf);
 
         /* jpg转为base64 */
 

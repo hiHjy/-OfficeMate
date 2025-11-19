@@ -1,5 +1,6 @@
 #include "face_api.h"
 #include <QMessageBox>
+#include <register.h>
 QString global_token = "";
 // 百度AI开放平台的API认证信息
 // client_id: 客户端ID，用于标识应用
@@ -123,7 +124,7 @@ int faceSearch(QString base64Image, QString token)
 }
 void faceRegister(QString base64Image, QString token,
                   QString name, QString workId,
-                  QString identity, QString imgPath)
+                  QString identity, QString imgPath, QString dept)
 {
     QNetworkAccessManager* manager = new QNetworkAccessManager;
     qDebug() << "faceRegister is called" << endl;
@@ -151,13 +152,17 @@ void faceRegister(QString base64Image, QString token,
             //qDebug() << "----" << user_id << endl;
             // 存数据库
             DatabaseManager::getInstance()->insertPersonInfo(
-                workId, identity, workId, name, imgPath
+                workId, identity, workId, name, imgPath, dept
             );
 
             QMessageBox::information(nullptr, "成功", "注册成功！");
+
+            Register::getInstance()->on_Btn_Clear_clicked();
+
         } else {
             QMessageBox::warning(nullptr, "错误", "注册失败：" + obj["error_msg"].toString());
         }
+
         reply->deleteLater();
     });
 }

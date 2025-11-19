@@ -10,6 +10,7 @@ struct UserInfo {
     QString workId;
     QString identity;
     QString imgPath;
+    QString dept;
     bool valid = false;   // 用来表示是否查到
 };
 class DatabaseManager : public QObject
@@ -19,11 +20,14 @@ public:
     explicit DatabaseManager(QObject *parent = nullptr);
     static DatabaseManager *getInstance();
     bool initDataBase();
-    bool insertPersonInfo(QString faceId,
+    bool insertPersonInfo(QString user_id,
                           QString identity,
                           QString workId,
                           QString name,
-                          QString faceFile);
+                          QString faceFile,
+                          QString dept);
+    bool insertVisitRecord(QString user_id);
+
 
     UserInfo getInfoByUID(const QString& faceToken);
 
