@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Form</class>
+ <widget class="QWidget" name="Form">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>480</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <widget class="QTabWidget" name="tabWidget">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>800</width>
+     <height>480</height>
+    </rect>
+   </property>
+   <property name="currentIndex">
+    <number>0</number>
+   </property>
+   <widget class="FaceAttendence" name="Face_Identifaction">
+    <attribute name="title">
+     <string>人脸识别</string>
+    </attribute>
+   </widget>
+   <widget class="Register" name="Face_Register">
+    <attribute name="title">
+     <string>注册</string>
+    </attribute>
+   </widget>
+  </widget>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>FaceAttendence</class>
+   <extends>QWidget</extends>
+   <header location="global">faceattendence.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>Register</class>
+   <extends>QWidget</extends>
+   <header location="global">register.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

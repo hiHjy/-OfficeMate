@@ -63,6 +63,7 @@ FaceAttendence::FaceAttendence(QWidget *parent)
         //faceSearch(jpgBase64, global_token);
     });
     connect(face_dect, &Work::sigFaceReady, this, [=](QString base64) {
+        qDebug() << "faceSearch";
         faceSearch(base64, global_token);
     });
 
@@ -74,7 +75,8 @@ FaceAttendence::FaceAttendence(QWidget *parent)
 
         } else {
 
-
+            stopCamera();
+            ui->head_cap_img->hide();
             qDebug() << "识别成功：";
             qDebug() << "姓名:" << user.name;
             qDebug() << "工号:" << user.workId;
@@ -103,10 +105,23 @@ FaceAttendence::FaceAttendence(QWidget *parent)
         if (status)
             ui->head_cap_img->move(x, y);
         else {
+
             ui->head_cap_img->move(old_x, old_y);
         }
 
     });
+
+    connect(face_dect, &Work::sigFaceCrop, this, [this](QImage img ){
+
+        int size =  ui->head_image->width();   // 圆形头像的直径
+        QImage scaled = img.scaled(size, size, Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation);
+
+        ui->head_image->setPixmap(QPixmap::fromImage(scaled));
+
+        qDebug() << "被调用";
+
+    });
+
 
 
 }
@@ -136,6 +151,41 @@ FaceAttendence *FaceAttendence::getInstance()
     return self;
 }
 
+void FaceAttendence::startCamera()
+{
+    if (!cap.isOpened()) {
+        cap.open("/dev/video0");
+    }
+    //    if (cap.isOpened()) {
+    //       qDebug() << "摄像头打开失败" << "file:" << __FILE__ << " line:" << __LINE__ << endl;
+    //       return;
+    //    }
+    if (!face_dect) {
+        face_dect = new Work(this, &frame, &cascade);
+        face_dect->start(); //启动线程
+    }
+    timer->start(33);
+}
+
+void FaceAttendence::stopCamera()
+{
+    if (face_dect) {
+        face_dect->requestInterruption();
+        face_dect->wait();
+        delete face_dect;
+        face_dect = nullptr;
+    }
+
+    if (cap.isOpened()) {
+        cap.release();
+    }
+    timer->stop();
+}
+
+
+
+
+
 Work::Work(QWidget *parent, cv::Mat *frame, cv::CascadeClassifier *cascade, QMutex *frameMutex)
     :
       QThread(parent),
@@ -145,6 +195,8 @@ Work::Work(QWidget *parent, cv::Mat *frame, cv::CascadeClassifier *cascade, QMut
 {
     // 可以在这里进行初始化
 }
+
+
 FaceAttendence::~FaceAttendence()
 {
     if (face_dect) {
@@ -153,6 +205,7 @@ FaceAttendence::~FaceAttendence()
         delete face_dect;
         face_dect = nullptr;
     }
+    cap.release();
     delete ui;
 
 }
@@ -168,29 +221,47 @@ void Work::run()
             work_frame = *frame;
 
         }
+        qDebug() << "work_frame size =" << work_frame.cols << work_frame.rows;
         cv::cvtColor(work_frame, gray, cv::COLOR_BGR2GRAY);
 
         // --- 2) Haar 人脸检测 ---
         std::vector<cv::Rect> faces;
 
-        this->cascade->detectMultiScale(gray, faces, 1.2, 3);
+        this->cascade->detectMultiScale(gray, faces);
         Rect rect;
         if (faces.empty() ) {
+
             emit sigFaceTrace(0, 0, false);
+            usleep(100000);
             continue;
         }
 
         rect = faces[0];
-        // --- 3) 给检测到的人脸画框 ---
+
+        for (size_t i = 1; i < faces.size(); ++i) {
+            if (faces[i].area() > rect.area()) {
+                rect = faces[i];
+            }
+        }
+
+
         if (faces.size() > 0) {
             qDebug() << "检测到人脸" << endl;
 
             //cv::rectangle(*this->frame, face, cv::Scalar(0, 255, 0), 2);
             emit sigFaceTrace(rect.x, rect.y, true);
-        } else {
+            cv::Rect faceRect = rect;
 
+            faceRect &= cv::Rect(0, 0, work_frame.cols, work_frame.rows);
+            cv::Mat faceROI = work_frame(faceRect).clone();
+
+
+            cv::Mat rgb;
+            cv::cvtColor(faceROI, rgb, cv::COLOR_BGR2RGB);
+            QImage img((const uchar*)rgb.data, rgb.cols, rgb.rows, rgb.step, QImage::Format_RGB888);
+            emit sigFaceCrop(img);
+            qDebug()<<"end";
         }
-
 
 
         static qint64 last = 0;
@@ -213,24 +284,16 @@ void Work::run()
         //faceSearch(jpgBase64, global_token);
         emit sigFaceReady(jpgBase64);
         // qDebug() << jpgBase64;
-        usleep(10000);
+        usleep(100000);
 
 
-        //        QString filename = QString("/home/hjy/Documents/linux-embed/qt/FaceAttendence/capture.jpg")
-        //              ;
-        //        QFile file(filename);
-        //        if (file.open(QIODevice::WriteOnly)) {
-        //            file.write((char*)buf.data(), buf.size());
-        //            file.close();
-        //            qDebug() << "保存图片:" << filename;
 
-        //            //✅ 下一步：把这个 JPG 文件传给你的人脸识别程序
-        //            system(QString("./face %1").arg(filename).toStdString().c_str());
-        //        }
 
 
 
     }
+
+
 }
 
 Work::~Work()

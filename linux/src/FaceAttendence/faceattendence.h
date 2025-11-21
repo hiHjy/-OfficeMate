@@ -25,8 +25,11 @@ public:
 signals:
     void sigFaceReady(QString base64);
     void sigFaceTrace(int x, int y, bool status);
+    void sigFaceCrop( QImage img);
+
 
 };
+
 
 
 class FaceAttendence : public QMainWindow
@@ -40,6 +43,8 @@ public:
     //void timerEvent(QTimerEvent *e);
     void updateFrame();
     static FaceAttendence *getInstance();
+    void startCamera();
+    void stopCamera();
 signals:
     void sigFaceVerified(UserInfo user);
 
@@ -56,6 +61,7 @@ private:
     QMutex frameMutex;
 
 };
+
 
 
 #endif // FACEATTENDENCE_H

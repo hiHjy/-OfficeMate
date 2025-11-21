@@ -24,6 +24,7 @@ LIBS += -L/opt/opencv4.5.2/lib -lopencv_world
 SOURCES += \
     databasemannager.cpp \
     face_api.cpp \
+    form.cpp \
     main.cpp \
     faceattendence.cpp \
     register.cpp
@@ -32,10 +33,12 @@ HEADERS += \
     databasemannager.h \
     face_api.h \
     faceattendence.h \
+    form.h \
     register.h
 
 FORMS += \
     faceattendence.ui \
+    form.ui \
     register.ui
 
 # Default rules for deployment.
